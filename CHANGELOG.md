@@ -46,6 +46,10 @@ Fehler:
   `WinfToSlay.exe` und eigener Java-Laufzeit (dazu `WinfToSlay-Konsole.exe` für
   Fehlerberichte); optional `gradlew :view:installer` für ein Windows-Setup (WiX). Die
   Versionsnummer steht nur noch in `gradle.properties`.
+* **macOS**: Release als `WinfToSlay.app` (ZIP bzw. `.dmg`, Apple Silicon und Intel); der
+  GitHub-Workflow `release.yml` baut Windows- und Mac-Versionen auf einmal. Im Programm:
+  kein AWT im Mac-Betrieb (sonst droht ein Hänger mit `-XstartOnFirstThread`), Kamera
+  zusätzlich per Pfeiltasten für Trackpads ohne mittlere Maustaste.
 
 Neue Tests: Lobby-Regeln, Spieler, mehrere Server nacheinander, belegter Port,
 Benachrichtigung beim Serverende, abgebrochener Verbindungsaufbau, Abweisung bei voller

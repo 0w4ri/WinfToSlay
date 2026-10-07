@@ -49,18 +49,21 @@ tasks.named('processResources', ProcessResources) {
 // ----------------------------------------------------------------------------
 // Release: eigenständiges Programm mit eigener Java-Laufzeit (jpackage aus dem JDK)
 //
-//   gradlew :view:releaseZip    → build/release/WinfToSlay-<Version>-windows-x64.zip
-//                                 (darin WinfToSlay\WinfToSlay.exe – kein Java nötig)
-//   gradlew :view:appImage      → nur der Ordner view/build/jpackage/image/WinfToSlay
-//   gradlew :view:installer     → Windows-Setup (.exe), braucht das WiX Toolset
+//   gradlew :view:releaseZip    → build/release/WinfToSlay-<Version>-<system>-<cpu>.zip
+//                                 Windows: WinfToSlay\WinfToSlay.exe, macOS: WinfToSlay.app
+//   gradlew :view:appImage      → nur das Programm unter view/build/jpackage/image
+//   gradlew :view:installer     → Windows: Setup-.exe (braucht das WiX Toolset), macOS: .dmg
 //
-// jpackage erzeugt immer ein Programm für das Betriebssystem, auf dem gebaut wird:
-// die .exe also unter Windows bauen. Die Java-Laufzeit im Paket stammt aus dem JDK,
-// mit dem Gradle läuft (in IntelliJ: Settings → Build Tools → Gradle → Gradle JVM).
+// jpackage erzeugt immer ein Programm für das Betriebssystem und den Prozessor, auf dem
+// gebaut wird: die .exe unter Windows, die .app auf einem Mac (Apple Silicon → arm64,
+// Intel → x64). Ohne eigenen Mac baut .github/workflows/release.yml alles bei GitHub.
+// Die Java-Laufzeit im Paket stammt aus dem JDK, mit dem Gradle läuft
+// (in IntelliJ: Settings → Build Tools → Gradle → Gradle JVM).
 // ----------------------------------------------------------------------------
 
 def os = org.gradle.internal.os.OperatingSystem.current()
 def platform = os.windows ? 'windows' : (os.macOsX ? 'macos' : 'linux')
+def cpu = System.getProperty('os.arch') in ['aarch64', 'arm64'] ? 'arm64' : 'x64'
 def jdkVersion = JavaVersion.current().majorVersion.toInteger()
 def jpackageTool = new File(System.getProperty('java.home'), 'bin/' + (os.windows ? 'jpackage.exe' : 'jpackage')).path
 def packageDir = layout.projectDirectory.dir('src/package').asFile
@@ -120,7 +123,12 @@ tasks.register('appImage', Exec) {
     if (jdkVersion >= 22) args '--java-options', '--enable-native-access=ALL-UNNAMED'
     if (jdkVersion >= 23) args '--java-options', '--sun-misc-unsafe-memory-access=allow'
     if (os.macOsX) args '--java-options', '-XstartOnFirstThread'
-    if (os.windows) {
+    if (os.macOsX) {
+        args '--icon', new File(packageDir, 'macos/WinfToSlay.icns').path,
+             '--mac-package-name', 'WinfToSlay',
+             '--mac-package-identifier', 'de.winftoslay.game'
+    }
+    else if (os.windows) {
         args '--icon', new File(packageDir, 'windows/WinfToSlay.ico').path
         // zweites Startprogramm mit Konsolenfenster für Fehlerberichte
         args '--add-launcher', 'WinfToSlay-Konsole=' + new File(packageDir, 'windows/WinfToSlay-Konsole.properties').path
@@ -130,37 +138,62 @@ tasks.register('appImage', Exec) {
     }
 }
 
-tasks.register('releaseZip', Zip) {
-    group = 'distribution'
-    description = 'Packt das Programm als ZIP für ein Release (entpacken und WinfToSlay starten).'
-    from(tasks.named('appImage'))
-    archiveFileName = "WinfToSlay-${appVersion}-${platform}-x64.zip"
-    destinationDirectory = releaseDir
+def releaseZipName = "WinfToSlay-${appVersion}-${platform}-${cpu}.zip"
+
+if (os.macOsX) {
+    // macOS: mit ditto packen – ein normales ZIP löst die Symlinks im Programmpaket auf
+    // und beschädigt damit dessen Signatur („App ist beschädigt“).
+    tasks.register('releaseZip', Exec) {
+        group = 'distribution'
+        description = 'Packt WinfToSlay.app als ZIP für ein Release.'
+        dependsOn 'appImage'
+        def zip = new File(releaseDir, releaseZipName)
+        def app = new File(jpackageImage, 'WinfToSlay.app')
+        outputs.file(zip)
+        doFirst {
+            releaseDir.mkdirs()
+            zip.delete()
+        }
+        commandLine 'ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', app.path, zip.path
+    }
+}
+else {
+    tasks.register('releaseZip', Zip) {
+        group = 'distribution'
+        description = 'Packt das Programm als ZIP für ein Release (entpacken und WinfToSlay starten).'
+        from(tasks.named('appImage'))
+        archiveFileName = releaseZipName
+        destinationDirectory = releaseDir
+    }
 }
 
 tasks.register('installer', Exec) {
     group = 'distribution'
-    description = 'Windows-Setup (WinfToSlay-<Version>.exe) mit Startmenü-Eintrag – braucht das WiX Toolset.'
+    description = 'Installationspaket: Windows-Setup (.exe, braucht das WiX Toolset) bzw. macOS-Abbild (.dmg).'
     dependsOn 'appImage'
-    def windows = os.windows
-    def setup = new File(releaseDir, "WinfToSlay-${appVersion}.exe")
-    onlyIf('nur unter Windows') { windows }
+    def supported = os.windows || os.macOsX
+    def type = os.windows ? 'exe' : 'dmg'
+    def image = new File(jpackageImage, os.macOsX ? 'WinfToSlay.app' : 'WinfToSlay')
+    def setup = new File(releaseDir, "WinfToSlay-${appVersion}.${type}")
+    onlyIf('nur unter Windows und macOS') { supported }
     outputs.file(setup)
     doFirst {
         setup.delete()
     }
     executable = jpackageTool
-    args '--type', 'exe',
-         '--app-image', new File(jpackageImage, 'WinfToSlay').path,
+    args '--type', type,
+         '--app-image', image.path,
          '--name', 'WinfToSlay',
          '--app-version', appVersion,
          '--vendor', 'WinfToSlay',
          '--description', 'WinfToSlay - das Kartenspiel rund ums WINF-Studium',
-         '--win-menu', '--win-menu-group', 'WinfToSlay',
-         '--win-shortcut', '--win-dir-chooser',
-         // Installation für den angemeldeten Benutzer: keine Administratorrechte nötig
-         '--win-per-user-install',
-         // gleiche ID für alle Versionen: ein neues Setup ersetzt die alte Installation
-         '--win-upgrade-uuid', '6f0d4a5e-3c1b-4f7e-9a42-2b8e5d7c9f10',
          '--dest', releaseDir.path
+    if (os.windows) {
+        args '--win-menu', '--win-menu-group', 'WinfToSlay',
+             '--win-shortcut', '--win-dir-chooser',
+             // Installation für den angemeldeten Benutzer: keine Administratorrechte nötig
+             '--win-per-user-install',
+             // gleiche ID für alle Versionen: ein neues Setup ersetzt die alte Installation
+             '--win-upgrade-uuid', '6f0d4a5e-3c1b-4f7e-9a42-2b8e5d7c9f10'
+    }
 }

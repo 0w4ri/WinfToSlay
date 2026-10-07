@@ -1,0 +1,68 @@
+# Baut WinfToSlay für Windows und macOS (Apple Silicon und Intel) bei GitHub.
+#
+# Auslösen: Tag pushen (z. B. „git tag v2.0.1 && git push origin v2.0.1“) – dann entsteht
+# ein Release-Entwurf mit allen ZIP-Dateien, der nur noch veröffentlicht werden muss.
+# Oder unter „Actions → Release → Run workflow“ von Hand: Die ZIPs liegen dann als
+# Artefakte am Lauf.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows (x64)
+            os: windows-latest
+          - name: macOS (Apple Silicon)
+            os: macos-latest
+          - name: macOS (Intel)
+            os: macos-15-intel
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests und Release-ZIP
+        shell: bash
+        run: |
+          chmod +x gradlew   # unter Windows eingecheckt fehlt sonst das Ausführungsrecht
+          ./gradlew test :view:releaseZip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WinfToSlay-${{ matrix.os }}
+          path: build/release/*.zip
+          if-no-files-found: error
+
+  release:
+    name: Release-Entwurf
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: true

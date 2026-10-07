@@ -99,6 +99,12 @@ public class WinfToSlayApp extends SimpleApplication {
         JME_CLIENT_LOGGER.setFilter(r -> r.getMessage() == null || !r.getMessage().startsWith("Connection terminated"));
         PROJECT_LOGGER.log(Level.INFO, "WinfToSlay {0}, Java {1}",
                            new Object[]{AppInfo.VERSION, System.getProperty("java.version")});
+        boolean mac = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("mac");
+        if (mac) {
+            // macOS: Das Fenster läuft im Hauptthread (-XstartOnFirstThread). AWT darf dort nicht
+            // starten, sonst hängt das Programm – AWT wird nur für Bilddaten gebraucht.
+            System.setProperty("java.awt.headless", "true");
+        }
         UserSettings prefs = new UserSettings();
         WinfToSlayApp app = new WinfToSlayApp(prefs);
         AppSettings s = new AppSettings(true);
@@ -108,7 +114,7 @@ public class WinfToSlayApp extends SimpleApplication {
         s.setVSync(true);
         s.setGammaCorrection(false);
         s.setSamples(prefs.getQuality() == UserSettings.Quality.HIGH ? 4 : 0);
-        s.setIcons(loadIcons());
+        if (!mac) s.setIcons(loadIcons()); // macOS: Symbol kommt aus dem Programmpaket
         app.setSettings(s);
         app.setShowSettings(false);
         app.setPauseOnLostFocus(false);

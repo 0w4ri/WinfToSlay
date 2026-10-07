@@ -74,6 +74,14 @@ public class GameScreen extends BaseAppState implements GameEventListener, Hud.A
     private static final String M_RIGHT = "game.right";
     private static final String M_UP = "game.up";
     private static final String M_DOWN = "game.down";
+    // Pfeiltasten schwenken die Kamera – für Trackpads ohne mittlere Maustaste (macOS)
+    private static final String M_KEY_LEFT = "game.keyLeft";
+    private static final String M_KEY_RIGHT = "game.keyRight";
+    private static final String M_KEY_UP = "game.keyUp";
+    private static final String M_KEY_DOWN = "game.keyDown";
+    private static final String[] MAPPINGS = {M_HELP, M_BOOST, M_RESET, M_DRAW, M_END, M_ZOOM_IN, M_ZOOM_OUT,
+                                              M_ORBIT, M_LEFT, M_RIGHT, M_UP, M_DOWN, M_KEY_LEFT, M_KEY_RIGHT,
+                                              M_KEY_UP, M_KEY_DOWN};
 
     private final WinfToSlayApp app;
     private final Session session;
@@ -238,15 +246,17 @@ public class GameScreen extends BaseAppState implements GameEventListener, Hud.A
         im.addMapping(M_RIGHT, new MouseAxisTrigger(MouseInput.AXIS_X, false));
         im.addMapping(M_UP, new MouseAxisTrigger(MouseInput.AXIS_Y, false));
         im.addMapping(M_DOWN, new MouseAxisTrigger(MouseInput.AXIS_Y, true));
-        im.addListener(input, M_HELP, M_BOOST, M_RESET, M_DRAW, M_END, M_ZOOM_IN, M_ZOOM_OUT, M_ORBIT, M_LEFT,
-                       M_RIGHT, M_UP, M_DOWN);
+        im.addMapping(M_KEY_LEFT, new KeyTrigger(KeyInput.KEY_LEFT));
+        im.addMapping(M_KEY_RIGHT, new KeyTrigger(KeyInput.KEY_RIGHT));
+        im.addMapping(M_KEY_UP, new KeyTrigger(KeyInput.KEY_UP));
+        im.addMapping(M_KEY_DOWN, new KeyTrigger(KeyInput.KEY_DOWN));
+        im.addListener(input, MAPPINGS);
     }
 
     @Override
     protected void onDisable() {
         InputManager im = app.getInputManager();
-        for (String m : new String[]{M_HELP, M_BOOST, M_RESET, M_DRAW, M_END, M_ZOOM_IN, M_ZOOM_OUT, M_ORBIT,
-                                     M_LEFT, M_RIGHT, M_UP, M_DOWN}) {
+        for (String m : MAPPINGS) {
             if (im.hasMapping(m)) im.deleteMapping(m);
         }
         im.removeListener(input);
@@ -560,6 +570,11 @@ public class GameScreen extends BaseAppState implements GameEventListener, Hud.A
                 case M_DOWN -> {
                     if (orbiting) stage.rig().orbit(0, -value * 80);
                 }
+                // Tasten liefern die Haltedauer: 60° bzw. 40° pro Sekunde
+                case M_KEY_LEFT -> stage.rig().orbit(-value * 60, 0);
+                case M_KEY_RIGHT -> stage.rig().orbit(value * 60, 0);
+                case M_KEY_UP -> stage.rig().orbit(0, value * 40);
+                case M_KEY_DOWN -> stage.rig().orbit(0, -value * 40);
                 default -> {
                     // nicht belegt
                 }

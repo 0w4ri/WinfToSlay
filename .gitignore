@@ -1,7 +1,8 @@
-# Build-Ergebnisse
+# Build-Ergebnisse (bin/: Ausgabe des IntelliJ/Eclipse-Compilers)
 build/
 .gradle/
 out/
+bin/
 *.class
 
 # IntelliJ (Laufkonfigurationen in .run/ werden geteilt)

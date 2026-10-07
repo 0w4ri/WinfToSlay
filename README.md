@@ -61,15 +61,31 @@ Für ein Netzwerkspiel auf einem Rechner startet man das Programm zweimal: einma
 der gewählte TCP-Port (Standard 1234) in der Firewall freigegeben sein; UDP wird nicht
 benötigt.
 
+**macOS** (Apple Silicon und Intel) funktioniert genauso wie Windows und Linux:
+`./gradlew :view:run` setzt dort automatisch den nötigen JVM-Schalter
+`-XstartOnFirstThread`. Fehlt nach dem Klonen das Ausführungsrecht, einmal
+`chmod +x gradlew`. Auf Trackpads ohne mittlere Maustaste schwenken die Pfeiltasten die
+Kamera; Rechtsklick ist ein Klick mit zwei Fingern.
+
 Neuere JDKs (ab 24) melden beim Start Warnungen zu `sun.misc.Unsafe` bzw. nativen
 Bibliotheken von LWJGL. Sie sind harmlos; `./gradlew :view:run` blendet sie über passende
 JVM-Schalter aus.
 
-## Release bauen (WinfToSlay.exe)
+## Release bauen (Windows-.exe und macOS-.app)
 
 Das Release ist ein eigenständiges Programm mit eingebauter Java-Laufzeit – Mitspieler
 brauchen kein Java. Gebaut wird mit `jpackage` aus dem JDK, und zwar immer für das
-Betriebssystem, auf dem man baut: die `.exe` also unter Windows.
+Betriebssystem und den Prozessor, auf dem man baut: die `.exe` unter Windows, die `.app`
+auf einem Mac (Apple Silicon → `arm64`, Intel → `x64`).
+
+**Alles auf einmal ohne eigenen Mac:** Der Workflow `.github/workflows/release.yml` baut
+bei GitHub die ZIPs für Windows, macOS Apple Silicon und macOS Intel und prüft vorher alle
+Tests. Auslösen mit einem Tag (`git tag v2.0.1` und `git push origin v2.0.1`) – dann liegt
+unter *Releases* ein Entwurf mit allen drei ZIP-Dateien, den man nur noch veröffentlicht.
+Alternativ unter *Actions → Release → Run workflow*; die ZIPs hängen dann als Artefakte am
+Lauf.
+
+### Windows
 
 ```bat
 gradlew.bat :view:releaseZip
@@ -98,11 +114,23 @@ Hinweise:
   Laufzeit. Dessen Java-Version wird eingepackt.
 * `gradlew.bat :view:appImage` erzeugt nur den Ordner (`view\build\jpackage\image\WinfToSlay`)
   zum schnellen Ausprobieren.
-* Optional ein **Installer** mit Startmenü-Eintrag und Desktop-Verknüpfung:
+* Optional ein **Installer** (Windows) mit Startmenü-Eintrag und Desktop-Verknüpfung:
   `gradlew.bat :view:installer` → `build\release\WinfToSlay-<Version>.exe`. Dafür muss das
   [WiX Toolset](https://wixtoolset.org/) installiert und im `PATH` sein (WiX 3.14; ab JDK 24
   auch WiX 4 oder 5). Installiert wird ohne Administratorrechte für den angemeldeten Benutzer;
   ein neueres Setup ersetzt eine ältere Installation.
+
+### macOS
+
+Auf einem Mac mit JDK ab 21: `./gradlew :view:releaseZip` →
+`build/release/WinfToSlay-<Version>-macos-arm64.zip` (bzw. `-x64` auf Intel-Macs) mit
+`WinfToSlay.app`; `./gradlew :view:installer` erzeugt zusätzlich ein `.dmg`. Eine Version
+für Apple Silicon läuft nicht auf Intel-Macs und umgekehrt – daher baut der Workflow beide.
+
+Die App ist nicht bei Apple beglaubigt (dafür bräuchte es ein kostenpflichtiges
+Entwicklerkonto). Beim ersten Start meldet macOS deshalb, dass die App nicht geprüft werden
+konnte. Freigeben: *Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“*, oder
+im Terminal einmal `xattr -dr com.apple.quarantine /Applications/WinfToSlay.app`.
 
 ## Steuerung
 
@@ -110,7 +138,7 @@ Hinweise:
 |---|---|
 | Linksklick | Handkarte ausspielen, Held aktivieren, Monster angreifen, Nachziehstapel ziehen |
 | Rechtsklick | Karte groß ansehen |
-| Mausrad / mittlere Maustaste | Zoom / Kamera schwenken |
+| Mausrad / mittlere Maustaste ziehen oder Pfeiltasten | Zoom / Kamera schwenken |
 | Leertaste (halten) | Animationen beschleunigen |
 | Z · E · C | Karte ziehen · Zug beenden · Kamera zurücksetzen |
 | F1 · Esc | Spielregeln · Menü |

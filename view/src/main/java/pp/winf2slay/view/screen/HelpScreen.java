@@ -95,7 +95,8 @@ public class HelpScreen extends Screen {
                                  + "Kamera schwenken."},
                     new String[]{"Tastatur",
                                  "Esc: Menü · F1: Spielregeln · Leertaste halten: Animationen beschleunigen · "
-                                 + "C: Kamera zurücksetzen · Z: Karte ziehen · E: Zug beenden"},
+                                 + "Pfeiltasten: Kamera schwenken · C: Kamera zurücksetzen · Z: Karte ziehen · "
+                                 + "E: Zug beenden"},
                     new String[]{"Hervorhebungen",
                                  "Goldenes Leuchten zeigt, was du gerade spielen kannst. Rot leuchtende Helden sind "
                                  + "Ziele, wenn du einen Helden auswählen sollst."})));
