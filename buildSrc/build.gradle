@@ -1,0 +1,13 @@
+plugins {
+    // Convention-Plugins als Groovy-Skripte unter src/main/groovy
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    gradlePluginPortal()
+}
+
+dependencies {
+    // Fat-Jar ("installShadowDist") für die Anwendung
+    implementation 'com.gradleup.shadow:shadow-gradle-plugin:9.2.2'
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WinfToSlay – Spielregeln</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="hero">
+    <img class="logo" src="../../view/src/main/resources/images/logo.png" alt="WinfToSlay">
+    <p class="tagline">Das Kartenspiel rund ums WINF-Studium · 2–6 Spieler · Netzwerk oder solo gegen Bots</p>
+    <nav>
+        <a href="#ueberblick">Überblick</a>
+        <a href="#zug">Dein Zug</a>
+        <a href="#karten">Karten</a>
+        <a href="#wuerfeln">Würfeln</a>
+        <a href="#bots">Bots</a>
+        <a href="#steuerung">Steuerung</a>
+    </nav>
+</header>
+
+<main>
+    <section id="ueberblick" class="card">
+        <h2>Überblick</h2>
+        <h3>Worum geht es?</h3>
+        <p>Ihr seid Studierende der Wirtschaftsinformatik und stellt eine Heldengruppe zusammen, um Monster
+            wie Klausuren und Hexidentin zu besiegen. Jeder Held gehört zu einer Klasse: Magier, Wächter,
+            Kämpfer, Waldläufer, Dieb oder Barde.</p>
+        <h3>Sieg</h3>
+        <p>Du gewinnst <strong>sofort</strong>, wenn du</p>
+        <ul>
+            <li><strong>3 Monster</strong> besiegt hast <em>oder</em></li>
+            <li><strong>5 verschiedene Klassen</strong> besitzt – dein Anführer zählt dabei als eine Klasse.</li>
+        </ul>
+        <h3>Spielstart</h3>
+        <p>Jeder erhält einen Anführer und 5 Handkarten. Drei Monster liegen offen in der Tischmitte.</p>
+    </section>
+
+    <section id="zug" class="card">
+        <h2>Dein Zug</h2>
+        <p>Pro Zug hast du <strong>3 Aktionspunkte (AP)</strong>. Aktionen sind frei kombinierbar und dürfen
+            mehrfach ausgeführt werden.</p>
+        <table>
+            <tr><th>Kosten</th><th>Aktion</th></tr>
+            <tr><td class="ap">1 AP</td><td>Karte ziehen</td></tr>
+            <tr><td class="ap">1 AP</td><td>Held oder Zauber ausspielen</td></tr>
+            <tr><td class="ap">1 AP</td><td>Effekt eines Helden auslösen (jeder Held einmal pro Zug)</td></tr>
+            <tr><td class="ap">2 AP</td><td>Ein Monster angreifen – dafür brauchst du mindestens 2 Helden in deiner Gruppe</td></tr>
+            <tr><td class="ap">3 AP</td><td>Neue Hand: alle Handkarten ablegen und 5 neue ziehen</td></tr>
+        </table>
+    </section>
+
+    <section id="karten" class="card">
+        <h2>Karten</h2>
+        <dl>
+            <dt>Helden</dt>
+            <dd>Kommen in deine Gruppe (höchstens 5). Beim Ausspielen und später gegen 1 AP würfelst du:
+                Erreichst du den Wert auf der Karte, tritt ihr Effekt ein.</dd>
+            <dt>Zauber</dt>
+            <dd>Wirken sofort – vom Frühstück, das Karten bringt, bis zur Fliegerbombe, die alle Helden zerstört.</dd>
+            <dt>Modifikationen</dt>
+            <dd>Verändern einen Würfelwurf um ±2 oder ±4. Du spielst sie, nachdem gewürfelt wurde – auch im Zug
+                der anderen.</dd>
+            <dt>Herausforderungen</dt>
+            <dd>Spielt jemand einen Helden oder Zauber, kannst du ihn herausfordern. Beide würfeln; verliert der
+                Ausspielende, landet die Karte auf dem Ablagestapel.</dd>
+            <dt>Anführer &amp; Monster</dt>
+            <dd>Anführer geben dauerhafte Boni. Besiegte Monster ebenso – misslingt ein Angriff, musst du einen
+                Helden opfern.</dd>
+        </dl>
+    </section>
+
+    <section id="wuerfeln" class="card">
+        <h2>Würfeln</h2>
+        <ul>
+            <li>Es wird immer mit <strong>zwei Würfeln</strong> gewürfelt. Boni von Anführer und Monstern werden
+                automatisch addiert.</li>
+            <li>Heldeneffekte und die meisten Monster verlangen einen <strong>Mindestwert</strong>.
+                Hommelgoyle ist anders: Hier musst du <strong>höchstens</strong> den Zielwert würfeln.</li>
+            <li>Nach jedem Wurf werden alle Spieler mit Modifikationskarten gefragt, ob sie das Ergebnis
+                verändern möchten.</li>
+        </ul>
+    </section>
+
+    <section id="bots" class="card">
+        <h2>Bots</h2>
+        <ul>
+            <li><strong>Solo spielen</strong> im Hauptmenü startet eine Partie gegen 1 bis 5 Bots –
+                Leicht, Normal, Schwer oder gemischt.</li>
+            <li>Im Netzwerkspiel kann der Gastgeber in der Lobby Bots hinzufügen und entfernen.</li>
+            <li>Verlässt ein Mensch das laufende Spiel, übernimmt ein Bot seinen Platz.</li>
+            <li>Wie schnell die Bots handeln, stellst du unter <em>Einstellungen → Bot-Tempo</em> ein.</li>
+        </ul>
+    </section>
+
+    <section id="steuerung" class="card">
+        <h2>Steuerung</h2>
+        <table>
+            <tr><th>Eingabe</th><th>Wirkung</th></tr>
+            <tr><td><kbd>Linksklick</kbd></td><td>Karte ausspielen, Held aktivieren, Monster angreifen, Nachziehstapel ziehen</td></tr>
+            <tr><td><kbd>Rechtsklick</kbd></td><td>Karte groß ansehen</td></tr>
+            <tr><td><kbd>Mausrad</kbd> · <kbd>Mitteltaste ziehen</kbd></td><td>Zoom · Kamera schwenken</td></tr>
+            <tr><td><kbd>Leertaste</kbd> halten</td><td>Animationen beschleunigen</td></tr>
+            <tr><td><kbd>Z</kbd> · <kbd>E</kbd> · <kbd>C</kbd></td><td>Karte ziehen · Zug beenden · Kamera zurücksetzen</td></tr>
+            <tr><td><kbd>F1</kbd> · <kbd>Esc</kbd></td><td>Spielregeln · Menü</td></tr>
+        </table>
+        <p class="hint">Goldenes Leuchten zeigt, was du gerade spielen kannst. Rot leuchtende Helden sind Ziele,
+            wenn du einen Helden auswählen sollst.</p>
+    </section>
+</main>
+
+<footer>
+    WinfToSlay 2.0.1 · Programmierpraktikum · Schriften: Lilita One, Nunito (SIL OFL) ·
+    Symbole: Material Icons (Apache 2.0)
+</footer>
+
+</body>
+</html>

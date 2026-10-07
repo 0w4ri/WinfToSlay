@@ -1,0 +1,21 @@
+// jMonkeyEngine-Anwendung (view): Start-Skripte, Fat-Jar und die passende LWJGL-Version
+plugins {
+    id 'buildlogic.java-common-conventions'
+    id 'application'
+    id 'com.gradleup.shadow'
+}
+
+def catalog = versionCatalogs.named('libs')
+
+dependencies {
+    if (pp.JMEStart.use_lwjgl2())
+        runtimeOnly catalog.findLibrary('jme3-lwjgl').get()
+    else
+        runtimeOnly catalog.findLibrary('jme3-lwjgl3').get()
+    if (!pp.JMEStart.mustStartOnFirstThread())
+        runtimeOnly catalog.findLibrary('jme3-awt-dialogs').get()
+}
+
+application {
+    applicationDefaultJvmArgs = pp.JMEStart.lwjglJvmArgs()
+}

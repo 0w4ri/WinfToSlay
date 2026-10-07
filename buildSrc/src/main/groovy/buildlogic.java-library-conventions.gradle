@@ -1,0 +1,5 @@
+// Bibliotheksmodule (model, controller)
+plugins {
+    id 'buildlogic.java-common-conventions'
+    id 'java-library'
+}

@@ -1,0 +1,8 @@
+rootProject.name = 'WinfToSlay'
+
+// Spiellogik ohne Grafik (Karten, Decks, Effekte, Würfel)
+include ':model'
+// Client-/Server-Logik, Netzwerkprotokoll und Bots
+include ':controller'
+// jMonkeyEngine-Anwendung (Menüs, 3D-Spieltisch, Animationen)
+include ':view'

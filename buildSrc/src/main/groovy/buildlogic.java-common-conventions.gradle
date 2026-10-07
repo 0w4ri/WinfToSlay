@@ -1,0 +1,38 @@
+// Gemeinsame Einstellungen für alle Java-Module von WinfToSlay.
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def catalog = versionCatalogs.named('libs')
+
+dependencies {
+    testImplementation catalog.findLibrary('junit-jupiter').get()
+    testImplementation catalog.findLibrary('junit-jupiter-params').get()
+    testRuntimeOnly catalog.findLibrary('junit-platform-launcher').get()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // Java 21 (LTS) ist Mindestversion – kompiliert wird mit jedem JDK >= 21 (empfohlen: Temurin 21 oder 23).
+    options.release = 21
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:unchecked', '-Xlint:-serial']
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // vermeidet "Sharing is only supported for boot loader classes"
+    jvmArgs '-Xshare:off'
+    testLogging {
+        events = ['failed']
+        exceptionFormat = 'full'
+    }
+}

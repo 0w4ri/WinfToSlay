@@ -1,0 +1,10 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+description = 'WinfToSlay – Spielmodell (Karten, Decks, Effekte, Würfel)'
+
+dependencies {
+    // Karten werden über das jME-Netzwerk serialisiert (@Serializable)
+    api libs.jme3.networking
+}

@@ -1,0 +1,23 @@
+# Build-Ergebnisse
+build/
+.gradle/
+out/
+*.class
+
+# IntelliJ (Laufkonfigurationen in .run/ werden geteilt)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Python-Hilfsskripte
+__pycache__/
+*.pyc
+
+# Laufzeitdaten
+*.log
+hs_err_pid*

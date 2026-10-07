@@ -1,0 +1,16 @@
+plugins {
+    id 'buildlogic.java-library-conventions'
+}
+
+description = 'WinfToSlay – Client-/Server-Logik, Netzwerkprotokoll und Bots'
+
+dependencies {
+    api project(':model')
+    api libs.jme3.networking
+}
+
+tasks.named('test') {
+    // Optional: ausführliches Logging der Simulationen, z. B. -PtestLogConfig=/pfad/logging.properties
+    if (project.hasProperty('testLogConfig'))
+        systemProperty 'java.util.logging.config.file', project.property('testLogConfig')
+}

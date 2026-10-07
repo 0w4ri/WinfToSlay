@@ -1,0 +1,166 @@
+plugins {
+    id 'buildlogic.jme-application-conventions'
+}
+
+description = 'WinfToSlay – jMonkeyEngine-Anwendung'
+
+dependencies {
+    implementation project(':controller')
+
+    implementation libs.jme3.core
+    implementation libs.jme3.desktop
+    implementation libs.jme3.effects
+    implementation libs.lemur
+
+    runtimeOnly libs.jme3.plugins   // glTF/glb-Modelle
+    runtimeOnly libs.jme3.jogg
+    runtimeOnly libs.slf4j.nop      // Lemur loggt über SLF4J
+}
+
+application {
+    mainClass = 'pp.winf2slay.view.WinfToSlayApp'
+    applicationName = 'winftoslay'
+}
+
+tasks.named('run') {
+    workingDir = rootProject.projectDir
+    // Entwicklerschalter weiterreichen, z. B.: ./gradlew run -Dwinf.autostart=solo
+    systemProperties providers.systemPropertiesPrefixedBy('winf.').get()
+    // Neuere JDKs warnen beim Start über LWJGL (sun.misc.Unsafe, native Bibliotheken) –
+    // harmlos, aber störend. Die Schalter gibt es erst ab der jeweiligen Version.
+    int jdk = JavaVersion.current().majorVersion.toInteger()
+    if (jdk >= 22) jvmArgs '--enable-native-access=ALL-UNNAMED'
+    if (jdk >= 23) jvmArgs '--sun-misc-unsafe-memory-access=allow'
+}
+
+// ----------------------------------------------------------------------------
+// Version: steht nur in gradle.properties (appVersion) und landet in version.properties
+// ----------------------------------------------------------------------------
+
+def appVersion = providers.gradleProperty('appVersion').get()
+
+tasks.named('processResources', ProcessResources) {
+    inputs.property('appVersion', appVersion)
+    filesMatching('version.properties') {
+        expand(appVersion: appVersion)
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Release: eigenständiges Programm mit eigener Java-Laufzeit (jpackage aus dem JDK)
+//
+//   gradlew :view:releaseZip    → build/release/WinfToSlay-<Version>-windows-x64.zip
+//                                 (darin WinfToSlay\WinfToSlay.exe – kein Java nötig)
+//   gradlew :view:appImage      → nur der Ordner view/build/jpackage/image/WinfToSlay
+//   gradlew :view:installer     → Windows-Setup (.exe), braucht das WiX Toolset
+//
+// jpackage erzeugt immer ein Programm für das Betriebssystem, auf dem gebaut wird:
+// die .exe also unter Windows bauen. Die Java-Laufzeit im Paket stammt aus dem JDK,
+// mit dem Gradle läuft (in IntelliJ: Settings → Build Tools → Gradle → Gradle JVM).
+// ----------------------------------------------------------------------------
+
+def os = org.gradle.internal.os.OperatingSystem.current()
+def platform = os.windows ? 'windows' : (os.macOsX ? 'macos' : 'linux')
+def jdkVersion = JavaVersion.current().majorVersion.toInteger()
+def jpackageTool = new File(System.getProperty('java.home'), 'bin/' + (os.windows ? 'jpackage.exe' : 'jpackage')).path
+def packageDir = layout.projectDirectory.dir('src/package').asFile
+def jpackageInput = layout.buildDirectory.dir('jpackage/input').get().asFile
+def jpackageImage = layout.buildDirectory.dir('jpackage/image').get().asFile
+def releaseDir = rootProject.layout.buildDirectory.dir('release').get().asFile
+
+// Module der Java-Laufzeit (ermittelt mit jdeps; jdk.charsets für das Konsolenfenster)
+def runtimeModules = 'java.base,java.desktop,java.logging,java.management,java.prefs,java.scripting,' +
+                     'java.sql,jdk.charsets,jdk.unsupported'
+
+tasks.register('jpackageInput', Sync) {
+    description = 'Sammelt die Jars für jpackage – native Bibliotheken nur für dieses Betriebssystem.'
+    from(tasks.named('jar'))
+    from(configurations.runtimeClasspath) {
+        // lwjgl-…-natives-<variante>.jar: fremde Betriebssysteme und 32 Bit weglassen
+        exclude { details ->
+            String name = details.name
+            int i = name.indexOf('-natives-')
+            if (i < 0) return false
+            String variant = name.substring(i + '-natives-'.length(), name.length() - 4)
+            return platform == 'macos' ? !variant.startsWith('macos') : variant != platform
+        }
+    }
+    into jpackageInput
+}
+
+tasks.register('appImage', Exec) {
+    group = 'distribution'
+    description = 'Erstellt das Programm mit eigener Java-Laufzeit (Windows: WinfToSlay.exe).'
+    dependsOn 'jpackageInput'
+    inputs.dir(jpackageInput)
+    inputs.dir(packageDir)
+    inputs.property('appVersion', appVersion)
+    inputs.property('jdkVersion', jdkVersion)
+    outputs.dir(jpackageImage)
+    doFirst {
+        if (!new File(jpackageTool).exists())
+            throw new GradleException("jpackage fehlt unter ${jpackageTool}. Gradle muss mit einem vollständigen JDK " +
+                                      "(ab 21, z. B. Temurin) laufen – in IntelliJ: Settings → Build, Execution, " +
+                                      "Deployment → Build Tools → Gradle → Gradle JVM.")
+        // jpackage bricht ab, wenn das Ziel schon existiert
+        jpackageImage.deleteDir()
+    }
+    executable = jpackageTool
+    args '--type', 'app-image',
+         '--name', 'WinfToSlay',
+         '--app-version', appVersion,
+         '--vendor', 'WinfToSlay',
+         '--description', 'WinfToSlay - das Kartenspiel rund ums WINF-Studium',
+         '--input', jpackageInput.path,
+         '--main-jar', 'view.jar',
+         '--main-class', 'pp.winf2slay.view.WinfToSlayApp',
+         '--add-modules', runtimeModules,
+         '--dest', jpackageImage.path
+    // dieselben Schalter wie bei :view:run, passend zum JDK, dessen Laufzeit eingepackt wird
+    if (jdkVersion >= 22) args '--java-options', '--enable-native-access=ALL-UNNAMED'
+    if (jdkVersion >= 23) args '--java-options', '--sun-misc-unsafe-memory-access=allow'
+    if (os.macOsX) args '--java-options', '-XstartOnFirstThread'
+    if (os.windows) {
+        args '--icon', new File(packageDir, 'windows/WinfToSlay.ico').path
+        // zweites Startprogramm mit Konsolenfenster für Fehlerberichte
+        args '--add-launcher', 'WinfToSlay-Konsole=' + new File(packageDir, 'windows/WinfToSlay-Konsole.properties').path
+    }
+    else if (os.linux) {
+        args '--icon', new File(packageDir, 'linux/WinfToSlay.png').path
+    }
+}
+
+tasks.register('releaseZip', Zip) {
+    group = 'distribution'
+    description = 'Packt das Programm als ZIP für ein Release (entpacken und WinfToSlay starten).'
+    from(tasks.named('appImage'))
+    archiveFileName = "WinfToSlay-${appVersion}-${platform}-x64.zip"
+    destinationDirectory = releaseDir
+}
+
+tasks.register('installer', Exec) {
+    group = 'distribution'
+    description = 'Windows-Setup (WinfToSlay-<Version>.exe) mit Startmenü-Eintrag – braucht das WiX Toolset.'
+    dependsOn 'appImage'
+    def windows = os.windows
+    def setup = new File(releaseDir, "WinfToSlay-${appVersion}.exe")
+    onlyIf('nur unter Windows') { windows }
+    outputs.file(setup)
+    doFirst {
+        setup.delete()
+    }
+    executable = jpackageTool
+    args '--type', 'exe',
+         '--app-image', new File(jpackageImage, 'WinfToSlay').path,
+         '--name', 'WinfToSlay',
+         '--app-version', appVersion,
+         '--vendor', 'WinfToSlay',
+         '--description', 'WinfToSlay - das Kartenspiel rund ums WINF-Studium',
+         '--win-menu', '--win-menu-group', 'WinfToSlay',
+         '--win-shortcut', '--win-dir-chooser',
+         // Installation für den angemeldeten Benutzer: keine Administratorrechte nötig
+         '--win-per-user-install',
+         // gleiche ID für alle Versionen: ein neues Setup ersetzt die alte Installation
+         '--win-upgrade-uuid', '6f0d4a5e-3c1b-4f7e-9a42-2b8e5d7c9f10',
+         '--dest', releaseDir.path
+}
